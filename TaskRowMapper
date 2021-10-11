@@ -1,0 +1,26 @@
+package az.itcity.bacar.repository;
+
+import az.itcity.bacar.domain.Task;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Component;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+@Component
+public class TaskRowMapper implements RowMapper<Task> {
+
+    @Override
+    public Task mapRow(ResultSet rs, int i) throws SQLException {
+
+        System.out.println("setir " + i + "isci obyektine chevir");
+        Task task = new Task();
+        task.setId(rs.getLong("id"));
+        task.setTitle(rs.getString("title"));
+        task.setDescription(rs.getString("description"));
+//        task.setCreatedAt(rs.getTimestamp("createdAt"));
+//        task.setFinishedAt(rs.getTimestamp("finishedAt"));
+        task.setStatus(rs.getString("status"));
+        return task;
+    }
+}
