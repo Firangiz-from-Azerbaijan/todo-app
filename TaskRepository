@@ -1,0 +1,15 @@
+package az.itcity.bacar.repository;
+
+import az.itcity.bacar.domain.Task;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface TaskRepository {
+    List<Task> getTaskList();
+    Optional<Task> getTaskById(long id);
+//    Optional<Task> getTaskByName(String name);
+//    Task add(Task task);
+//    Task update(Task task);
+//    boolean delete(long id);
+}
