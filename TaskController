@@ -1,0 +1,37 @@
+package az.itcity.bacar.controller;
+
+
+import az.itcity.bacar.repository.TaskRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.ModelAndView;
+
+
+@Controller
+@RequestMapping(value = {"/task", "/task/"})
+public class TaskController {
+
+    @Autowired
+    private TaskRepository taskRepository;
+
+
+    @GetMapping
+    private ModelAndView viewTasks() {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("task");
+        modelAndView.addObject("task", taskRepository.getTaskList());
+        return modelAndView;
+    }
+
+    @GetMapping("/{id}")
+    private ModelAndView viewTaskById(@PathVariable (name="id") long id) {
+        ModelAndView modelAndView = new ModelAndView();
+        modelAndView.setViewName("task-detail");
+        modelAndView.addObject("task", taskRepository.getTaskById(id));
+        return modelAndView;
+    }
+
+}
