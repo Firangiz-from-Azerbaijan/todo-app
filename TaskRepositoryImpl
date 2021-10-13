@@ -2,8 +2,11 @@ package az.itcity.bacar.repository;
 
 import az.itcity.bacar.domain.Task;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,7 +24,7 @@ public class TaskRepositoryImpl implements TaskRepository{
 
     @Override
     public List<Task> getTaskList() {
-        String sql = "select id, title, description, status " +
+        String sql = "select id, title, description, created_at, finished_at, status " +
                 "from task\n" +
                 "order by id";
 
@@ -31,112 +34,81 @@ public class TaskRepositoryImpl implements TaskRepository{
     @Override
     public Optional<Task> getTaskById(long id) {
         Optional<Task> optionalTask = Optional.empty();
-        String sql = "select id, title, description, status " +
-                "from task " +
+        String sql = "select id, title, description, created_at, finished_at, status " +
+                "from task\n" +
                 "where id = ?";
 
-        Task task = jdbcTemplate.queryForObject(sql, taskRowMapper, id);
-        if(task != null) {
-            optionalTask= Optional.of(task);
+        List<Task> task = jdbcTemplate.query(sql, taskRowMapper, id);
+        if(!task.isEmpty()){
+            optionalTask = Optional.of(task.get(0));
         }
         return optionalTask;
-    }
-
-
-    /*  private List<Employee> employees;
-
-    public EmployeeRepositoryImpl() {
-        this.employees = new ArrayList<>();
-        employees.add(new Employee(1, "Ali", "Mammadov", BigDecimal.valueOf(3000)));
-        employees.add(new Employee(2, "Hasan", "Heyderov", BigDecimal.valueOf(4000)));
-        employees.add(new Employee(3, "Natiq", "Aliyev", BigDecimal.valueOf(5000)));
-        employees.add(new Employee(4, "Gulshen", "Aydinova", BigDecimal.valueOf(6000)));
-        employees.add(new Employee(5, "Xatire", "Seyidova", BigDecimal.valueOf(7000)));
 
     }
 
+    @Override
+    public Task add(Task task) {
+        String sql = "insert into task (title, description, created_at, finished_at, status) " +
+                "values(?, ?, ?, ?, ?)";
+        Object[] data = new Object[] {task.getTitle(), task.getDescription(), task.getCreatedAt(), task.getFinishedAt(), task.getStatus()};
+        int count = jdbcTemplate.update(sql,data);
+        if(count == 1){
+            System.out.println("Isci elave olundu");
+        }
+        return task;
+    }
+
+
+    /*
+   @Override
+   public Task add(Task task) {
+       String sql = "insert into task (title, description, created_at, finished_at, status) " +
+               "values(?, ?, ?, ?, ?)";
+       Object[] data = new Object[] {task.getTitle(), task.getDescription(), task.getCreatedAt(), task.getFinishedAt(), task.getStatus()};
+       // int count = jdbcTemplate.update(sql, data);
+
+       KeyHolder keyHolder = new GeneratedKeyHolder();
+       int count = jdbcTemplate.update(connection -> {
+                   PreparedStatement ps = connection.prepareStatement(sql, new String[]{"id"});
+                   ps.setString(1, task.getTitle());
+                   ps.setString(2, task.getDescription());
+                   ps.setTimestamp(3, task.getCreatedAt());
+                   ps.setTimestamp(4, task.getFinishedAt());
+                   ps.setString(5, task.getStatus());
+
+                   return ps;
+               },
+               keyHolder);
+
+       if(count == 1){
+           System.out.println("yeni task elave olundu");
+           task.setId(keyHolder.getKey().longValue());
+       }
+       return task;
+   }
 */
-
-      /*  private NamedParameterJdbcTemplate jdbcTemplate;
-        private EmployeeRowMapper employeeRowMapper;
-        private EmployeeResultSetExtractor employeeResultSetExtractor;
-
-        public EmployeeRepositoryImplAdvanced(NamedParameterJdbcTemplate jdbcTemplate, EmployeeRowMapper employeeRowMapper, EmployeeResultSetExtractor employeeResultSetExtractor) {
-            this.jdbcTemplate = jdbcTemplate;
-            this.employeeRowMapper = employeeRowMapper;
-            this.employeeResultSetExtractor = employeeResultSetExtractor;
+    @Override
+    public Task update(Task task) {
+        String sql = "update task " +
+                "set title = ?, description = ?, created_at=?, finished_at = ?, status = ? " +
+                "where id = ? ";
+        Object[] data = new Object[]{task.getTitle(), task.getDescription(), task.getCreatedAt(), task.getFinishedAt(),
+                task.getStatus(), task.getId()};
+        int count = jdbcTemplate.update(sql, data);
+        if(count == 1) {
+            System.out.println("Task update olundu");
         }
+        return task;
+    }
 
-        @Override
-        public List<Employee> getEmployeeList() {
-            String sql = "select id, name, surname, salary " +
-                    "from employee " +
-                    "order by id";
+    @Override
+    public boolean delete(long id) {
+        String sql = " delete from task " +
+                "where id = ? ";
+        int count = jdbcTemplate.update(sql, id);
+        return count>0;
+    }
 
-//        return jdbcTemplate.query(sql, employeeRowMapper);
-            return jdbcTemplate.query(sql, employeeResultSetExtractor);
-        }
-
-        @Override
-        public Optional<Employee> getEmployeeById(long id) {
-            Optional<Employee> optionalEmployee = Optional.empty();
-            String sql = "select id, name, surname, salary " +
-                    "from employee " +
-                    "where id = :id";
-            MapSqlParameterSource params = new MapSqlParameterSource("id", id);
-            List<Employee> employees = jdbcTemplate.query(sql, params, employeeRowMapper);
-            if (!employees.isEmpty()) {
-                optionalEmployee = Optional.of(employees.get(0));
-            }
-            return optionalEmployee;
-        }
-
-        @Override
-        public Employee add(Employee employee) {
-            String sql = "insert into employee(name, surname, salary) " +
-                    "values(:name, :surname, :salary)";
-            MapSqlParameterSource params = new MapSqlParameterSource("name", employee.getName())
-                    .addValue("surname", employee.getSurname())
-                    .addValue("salary", employee.getSalary());
-
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            int count = jdbcTemplate.update(sql, params, keyHolder, new String[]{"id"});
-
-            if (count == 1) {
-                System.out.println("isci elave olundu");
-                employee.setId(keyHolder.getKey().longValue());
-            }
-            return employee;
-        }
-
-        @Override
-        public Employee update(Employee employee) {
-            String sql = "update employee " +
-                    "set name = :name, surname = :surname, salary = :salary " +
-                    "where id = :id";
-            MapSqlParameterSource params = new MapSqlParameterSource("name", employee.getName())
-                    .addValue("surname", employee.getSurname())
-                    .addValue("salary", employee.getSalary())
-                    .addValue("id", employee.getId());
-
-            int count = jdbcTemplate.update(sql, params);
-            if(count == 1) {
-                System.out.println("isci update olundu");
-            }
-            return employee;
-        }
-
-        @Override
-        public boolean delete(long id) {
-            String sql = "delete from employee " +
-                    "where id = :id";
-            MapSqlParameterSource params = new MapSqlParameterSource("id", id);
-            int count = jdbcTemplate.update(sql,params);
-            return count > 0;
-        }
-
-
-       */
 
 
 }
